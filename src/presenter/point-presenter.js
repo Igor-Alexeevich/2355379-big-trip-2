@@ -1,4 +1,4 @@
-import { replace, render } from '../framework/render.js';
+import { replace, render, remove } from '../framework/render.js';
 
 import PointView from '../view/point-view.js';
 
@@ -19,6 +19,9 @@ export default class PointPresenter {
   }
 
   init() {
+    const prevPointComponent = this.#pointComponent;
+    const prevPointEditComponent = this.#pointEditComponent;
+
     // у очередного элемента по destination находим в points-model.js с функцией getDestinationById,
     const destination = this.#pointsModel.getDestinationById(this.#point.destination);
     // как в const point
@@ -49,6 +52,29 @@ export default class PointPresenter {
       }
     });
     render(this.#pointComponent, this.#listPoint.element);
+
+    if (prevPointComponent === null || prevPointEditComponent === null) {
+      render(this.#pointComponent, this.#listPoint.element);
+      return;
+    }
+
+    // Проверка на наличие в DOM необходима,
+    // чтобы не пытаться заменить то, что не было отрисовано
+    if (this.#listPoint.element.contains(prevPointComponent.element)) {
+      replace(this.#pointComponent, prevPointComponent);
+    }
+
+    if (this.#listPoint.element.contains(prevPointEditComponent.element)) {
+      replace(this.#pointEditComponent, prevPointEditComponent);
+    }
+
+    remove(prevPointComponent);
+    remove(prevPointEditComponent);
+  }
+
+  destroy() {
+    remove(this.#pointComponent);
+    remove(this.#pointEditComponent);
   }
 
   #replacePointToForm() {

@@ -13,7 +13,7 @@ export default class BoardPresenter {
   pointComponent = new PointView();
   editPointComponent = new EditPointView();
   messageComponent = new MessageView();
-
+  #pointPresenters = new Map();
 
   constructor({ boardContainer, pointsModel }) { // параметр передан в main.js
     this.boardContainer = boardContainer; // создано свойство boardContainer у этого объекта
