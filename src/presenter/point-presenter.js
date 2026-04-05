@@ -4,6 +4,11 @@ import PointView from '../view/point-view.js';
 
 import EditPointView from '../view/edit-point-view.js';
 
+const Mode = {
+  DEFAULT: 'DEFAULT',
+  EDITING: 'EDITING',
+};
+
 export default class PointPresenter {
   #pointComponent = null;
   #pointEditComponent = null;
@@ -11,14 +16,20 @@ export default class PointPresenter {
   #point = null;
   #pointsModel = null;
   #listPoint = null;
+  #handleDataChange = null;
+  #handleModeChange = null;
+  #mode = Mode.DEFAULT;
 
-  constructor(point, pointsModel, listPoint) {
+  constructor({ point, pointsModel, listPoint, handlePointChange, onModeChange }) {
     this.#point = point;
     this.#pointsModel = pointsModel;
     this.#listPoint = listPoint;
+    this.#handleDataChange = handlePointChange;
+    this.#handleModeChange = onModeChange;
   }
 
-  init() {
+  init(point) {
+    this.#point = point;
     const prevPointComponent = this.#pointComponent;
     const prevPointEditComponent = this.#pointEditComponent;
 
@@ -34,13 +45,13 @@ export default class PointPresenter {
     const allTypes = this.#pointsModel.getOffers().map((item) => item.type);
     const offersByType = this.#pointsModel.getOffersByType(this.#point.type).offers;
 
-
     this.#pointComponent = new PointView(this.#point, destination, offers);
     this.#pointComponent.init({
       onEditClick: () => {
         this.#replacePointToForm();
         document.addEventListener('keydown', this.#escKeyDownHandler);
-      }
+      },
+      onFavoriteClick: () => this.#handleFavoriteClick()
     });
 
     this.#pointEditComponent = new EditPointView(this.#point, destination, allDestinations, allTypes, offersByType);
@@ -60,11 +71,11 @@ export default class PointPresenter {
 
     // Проверка на наличие в DOM необходима,
     // чтобы не пытаться заменить то, что не было отрисовано
-    if (this.#listPoint.element.contains(prevPointComponent.element)) {
+    if (this.#mode === Mode.DEFAULT) {
       replace(this.#pointComponent, prevPointComponent);
     }
 
-    if (this.#listPoint.element.contains(prevPointEditComponent.element)) {
+    if (this.#mode === Mode.EDITING) {
       replace(this.#pointEditComponent, prevPointEditComponent);
     }
 
@@ -77,12 +88,29 @@ export default class PointPresenter {
     remove(this.#pointEditComponent);
   }
 
+  resetView() {
+    if (this.#mode !== Mode.DEFAULT) {
+      this.#replaceFormToPoint();
+    }
+  }
+
+  #handleFavoriteClick() {
+    this.#handleDataChange({ ...this.#point, isFavorite: !this.#point.isFavorite });
+  }
+
+  #handleSubmit() {
+    this.#handleDataChange({ ...this.#point, isFavorite: !this.#point.isFavorite });
+  }
+
   #replacePointToForm() {
     replace(this.#pointEditComponent, this.#pointComponent);
+    this.#handleModeChange();
+    this.#mode = Mode.EDITING;
   }
 
   #replaceFormToPoint() {
     replace(this.#pointComponent, this.#pointEditComponent);
+    this.#mode = Mode.DEFAULT;
   }
 
   #escKeyDownHandler = (evt) => {

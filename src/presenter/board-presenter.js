@@ -8,6 +8,8 @@ import SortView from '../view/sort-view.js';
 import MessageView from '../view/message-view.js';
 import PointPresenter from './point-presenter.js';
 
+import { updateItem } from '../utils.js';
+
 export default class BoardPresenter {
   #listPoint = new BoardView();
   pointComponent = new PointView();
@@ -20,12 +22,6 @@ export default class BoardPresenter {
     this.pointsModel = pointsModel;
   }
 
-  #renderPoint(point) {
-    const pointPresenter = new PointPresenter(point, this.pointsModel, this.#listPoint);
-    pointPresenter.init();
-
-  }
-
   // init(), инициализатор начальной загрузки, название придумал
   // вызывается в main.js
   init() {
@@ -33,7 +29,24 @@ export default class BoardPresenter {
 
     // добавить сортировку
     render(new SortView(), this.boardContainer); // по умолчанию идет добавление в конец контейнера, прописано в render.js (place = RenderPosition.BEFOREEND)
+    this.#renderPointList();
+  }
 
+  #handleModeChange = () => {
+    this.#pointPresenters.forEach((presenter) => presenter.resetView());
+  };
+
+  #handlePointChange = (updatedPoint) => {
+    this.points = updateItem(this.points, updatedPoint);
+    this.#pointPresenters.get(updatedPoint.id).init(updatedPoint);
+  };
+
+  #clearPointList() {
+    this.#pointPresenters.forEach((presenter) => presenter.destroy());
+    this.#pointPresenters.clear();
+  }
+
+  #renderPointList() {
     // добавить список
     render(this.#listPoint, this.boardContainer);
 
@@ -46,7 +59,18 @@ export default class BoardPresenter {
         this.#renderPoint(this.points[i]);
       }
     }
+  }
 
+  #renderPoint(point) {
+    const pointPresenter = new PointPresenter({
+      point,
+      pointsModel: this.pointsModel,
+      listPoint: this.#listPoint,
+      handlePointChange: this.#handlePointChange,
+      onModeChange: this.#handleModeChange
+    });
+    pointPresenter.init(point);
+    this.#pointPresenters.set(point.id, pointPresenter);
   }
 }
 

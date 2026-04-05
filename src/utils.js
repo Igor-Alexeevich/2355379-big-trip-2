@@ -55,5 +55,9 @@ function isPastPoints(points) {
   return getPastPoints(points).length > 0;
 }
 
-export { formatDate, getDuration, isFuturePoints, isPastPoints, isPresentPoints };
+function updateItem(items, update) {
+  return items.map((item) => item.id === update.id ? update : item);
+}
+
+export { formatDate, getDuration, isFuturePoints, isPastPoints, isPresentPoints, updateItem };
 
