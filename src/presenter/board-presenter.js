@@ -1,73 +1,25 @@
-import { render, replace } from '../framework/render.js';
+import { render } from '../framework/render.js';
 import BoardView from '../view/board.js'; // без скобок - импорт default, название может быть любое или повторяет с импорта
 import PointView from '../view/point-view.js';
 import EditPointView from '../view/edit-point-view.js';
 
 import SortView from '../view/sort-view.js';
 
-import { addNewPoint } from '/src/utils.js';
-
 import MessageView from '../view/message-view.js';
+import PointPresenter from './point-presenter.js';
+
+import { updateItem } from '../utils.js';
+
 export default class BoardPresenter {
   #listPoint = new BoardView();
   pointComponent = new PointView();
   editPointComponent = new EditPointView();
   messageComponent = new MessageView();
+  #pointPresenters = new Map();
 
   constructor({ boardContainer, pointsModel }) { // параметр передан в main.js
     this.boardContainer = boardContainer; // создано свойство boardContainer у этого объекта
     this.pointsModel = pointsModel;
-  }
-
-  #renderPoint(point) {
-    // у очередного элемента по destination находим в points-model.js с функцией getDestinationById,
-    const destination = this.pointsModel.getDestinationById(point.destination);
-    // как в const point
-    const offers = this.pointsModel
-      .getOffersByType(point.type)
-      .offers // массив 'offers': по типу в offers.js
-      .filter((offer) => point.offers.includes(offer.id)); // фильтрация id-шников в 'offers': в points.js
-
-    const allDestinations = this.pointsModel.getDestination().map((item) => item.name);
-    const allTypes = this.pointsModel.getOffers().map((item) => item.type);
-    const offersByType = this.pointsModel.getOffersByType(point.type).offers;
-
-    const escKeyDownHandler = (evt) => {
-      if (evt.key === 'Escape') {
-        evt.preventDefault();
-
-        replaceFormToPoint();
-        document.removeEventListener('keydown', escKeyDownHandler);
-      }
-    };
-
-    const pointComponent = new PointView(point, destination, offers);
-    pointComponent.init({
-      onEditClick: () => {
-        replacePointToForm();
-        document.addEventListener('keydown', escKeyDownHandler);
-      }
-    });
-
-    const pointEditComponent = new EditPointView(point, destination, allDestinations, allTypes, offersByType);
-
-    pointEditComponent.init({
-      onCancelClick: () => {
-        replaceFormToPoint();
-        document.removeEventListener('keydown', escKeyDownHandler);
-      }
-    });
-    // 1 аргумент - что рисовать, 2 аргумент - куда рисовать
-    render(pointComponent, this.#listPoint.element);
-
-    function replacePointToForm() {
-      replace(pointEditComponent, pointComponent);
-    }
-
-    function replaceFormToPoint() {
-      replace(pointComponent, pointEditComponent);
-    }
-
   }
 
   // init(), инициализатор начальной загрузки, название придумал
@@ -77,7 +29,24 @@ export default class BoardPresenter {
 
     // добавить сортировку
     render(new SortView(), this.boardContainer); // по умолчанию идет добавление в конец контейнера, прописано в render.js (place = RenderPosition.BEFOREEND)
+    this.#renderPointList();
+  }
 
+  #handleModeChange = () => {
+    this.#pointPresenters.forEach((presenter) => presenter.resetView());
+  };
+
+  #handlePointChange = (updatedPoint) => {
+    this.points = updateItem(this.points, updatedPoint);
+    this.#pointPresenters.get(updatedPoint.id).init(updatedPoint);
+  };
+
+  #clearPointList() {
+    this.#pointPresenters.forEach((presenter) => presenter.destroy());
+    this.#pointPresenters.clear();
+  }
+
+  #renderPointList() {
     // добавить список
     render(this.#listPoint, this.boardContainer);
 
@@ -90,7 +59,18 @@ export default class BoardPresenter {
         this.#renderPoint(this.points[i]);
       }
     }
+  }
 
+  #renderPoint(point) {
+    const pointPresenter = new PointPresenter({
+      point,
+      pointsModel: this.pointsModel,
+      listPoint: this.#listPoint,
+      handlePointChange: this.#handlePointChange,
+      onModeChange: this.#handleModeChange
+    });
+    pointPresenter.init(point);
+    this.#pointPresenters.set(point.id, pointPresenter);
   }
 }
 
