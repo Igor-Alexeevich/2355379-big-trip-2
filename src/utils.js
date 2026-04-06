@@ -3,14 +3,20 @@ import duration from 'dayjs/plugin/duration';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 
-dayjs.extend(duration);
-dayjs.extend(isSameOrAfter);
-dayjs.extend(isSameOrBefore);
-
 const MONTH_DAY_FORMAT = 'MMM DD';
 const MINUTE_DURATION = 1000 * 60;
 const HOUR_DURATION = MINUTE_DURATION * 60;
 const DAY_DURATION = HOUR_DURATION * 25;
+const SortType = {
+  DEFAULT: 'default',
+  TIME: 'time',
+  PRICE: 'price',
+};
+
+dayjs.extend(duration);
+dayjs.extend(isSameOrAfter);
+dayjs.extend(isSameOrBefore);
+
 
 function formatDate(date, format = MONTH_DAY_FORMAT) {
   return date ? dayjs(date).format(format) : '';
@@ -59,5 +65,31 @@ function updateItem(items, update) {
   return items.map((item) => item.id === update.id ? update : item);
 }
 
-export { formatDate, getDuration, isFuturePoints, isPastPoints, isPresentPoints, updateItem };
+function sortPointsByPrice(pointA, pointB) {
+  return pointB.basePrice - pointA.basePrice;
+}
+
+function sortPointsByDay(pointA, pointB) {
+  return dayjs(pointA.dateFrom) - dayjs(pointB.dateFrom);
+}
+
+function sortPointsByDuration(pointA, pointB) {
+  const differencePointA = dayjs(pointA.dateTo).diff(pointA.dateFrom);
+  const differencePointB = dayjs(pointB.dateTo).diff(pointB.dateFrom);
+
+  return differencePointB - differencePointA;
+}
+
+export {
+  formatDate,
+  getDuration,
+  isFuturePoints,
+  isPastPoints,
+  isPresentPoints,
+  updateItem,
+  SortType,
+  sortPointsByPrice,
+  sortPointsByDay,
+  sortPointsByDuration
+};
 

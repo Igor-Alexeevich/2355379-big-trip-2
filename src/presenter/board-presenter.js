@@ -8,7 +8,7 @@ import SortView from '../view/sort-view.js';
 import MessageView from '../view/message-view.js';
 import PointPresenter from './point-presenter.js';
 
-import { updateItem } from '../utils.js';
+import { updateItem, sortPointsByPrice, SortType, sortPointsByDay, sortPointsByDuration } from '../utils.js';
 
 export default class BoardPresenter {
   #listPoint = new BoardView();
@@ -16,6 +16,8 @@ export default class BoardPresenter {
   editPointComponent = new EditPointView();
   messageComponent = new MessageView();
   #pointPresenters = new Map();
+  #sortComponent = null;
+  #currentSortType = SortType.DEFAULT;
 
   constructor({ boardContainer, pointsModel }) { // параметр передан в main.js
     this.boardContainer = boardContainer; // создано свойство boardContainer у этого объекта
@@ -28,8 +30,41 @@ export default class BoardPresenter {
     this.points = this.pointsModel.getPoints().slice();
 
     // добавить сортировку
-    render(new SortView(), this.boardContainer); // по умолчанию идет добавление в конец контейнера, прописано в render.js (place = RenderPosition.BEFOREEND)
+    this.#renderSort();
+    // добавить список
+    render(this.#listPoint, this.boardContainer);
     this.#renderPointList();
+  }
+
+  #handleSortTypeChange = (sortType) => {
+    if (this.#currentSortType === sortType) {
+      return;
+    }
+    this.#currentSortType = sortType;
+    // - Сортируем точки
+    if (sortType === SortType.PRICE) {
+      this.points = this.pointsModel.getPoints().slice().sort(sortPointsByPrice);
+    }
+
+    if (sortType === SortType.TIME) {
+      this.points = this.pointsModel.getPoints().slice().sort(sortPointsByDuration);
+    }
+
+    if (sortType === SortType.DEFAULT) {
+      this.points = this.pointsModel.getPoints().slice().sort(sortPointsByDay);
+    }
+
+    // - Очищаем список
+    this.#clearPointList();
+
+    // - Рендерим список заново
+    this.#renderPointList();
+  };
+
+  #renderSort() {
+    this.#sortComponent = new SortView();
+    render(this.#sortComponent, this.boardContainer); // по умолчанию идет добавление в конец контейнера, прописано в render.js (place = RenderPosition.BEFOREEND)
+    this.#sortComponent.init(this.#handleSortTypeChange);
   }
 
   #handleModeChange = () => {
@@ -44,11 +79,10 @@ export default class BoardPresenter {
   #clearPointList() {
     this.#pointPresenters.forEach((presenter) => presenter.destroy());
     this.#pointPresenters.clear();
+
   }
 
   #renderPointList() {
-    // добавить список
-    render(this.#listPoint, this.boardContainer);
 
     // проверить наличие точек и вывести сообщение
     if (this.points.length === 0) {
