@@ -37,7 +37,7 @@ export default class SortView extends AbstractView {
 
   init(onSortTypeChange) {
     this.element.addEventListener('change', (evt) => {
-      console.log();
+
       onSortTypeChange(evt.target.dataset.sortType);
     });
   }
