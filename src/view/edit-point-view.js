@@ -1,3 +1,5 @@
+import flatpickr from 'flatpickr';
+import 'flatpickr/dist/flatpickr.min.css';
 //import AbstractView from '../framework/view/abstract-view.js';
 import AbstractStatefulView from '../framework/view/abstract-stateful-view.js';
 import { formatDate } from '../utils.js';
@@ -100,6 +102,8 @@ export default class EditPointView extends AbstractStatefulView {
   #getDestinationByName = null;
   #getDestinationById = null;
   #onCancelClick = null;
+  #datepickerFrom = null;
+  #datepickerTo = null;
 
   constructor(point, destination, allDestinations, allTypes, offersByType) {
     super(); // вызвать конструктор родителя
@@ -117,6 +121,8 @@ export default class EditPointView extends AbstractStatefulView {
     this.#getDestinationByName = getDestinationByName;
     this.#getDestinationById = getDestinationById;
     this.#onCancelClick = onCancelClick;
+
+
     this._restoreHandlers();
   }
 
@@ -124,11 +130,27 @@ export default class EditPointView extends AbstractStatefulView {
     return createEditPointTemplate(this._state, this.destination, this.allDestinations, this.allTypes, this.offersByType);
   }
 
+  removeElement() {
+    super.removeElement();
+
+    if (this.#datepickerFrom) {
+      this.#datepickerFrom.destroy();
+      this.#datepickerFrom = null;
+    }
+
+    if (this.#datepickerTo) {
+      this.#datepickerTo.destroy();
+      this.#datepickerTo = null;
+    }
+  }
+
   _restoreHandlers() {
     this.element.querySelector('.event__rollup-btn').addEventListener('click', this.#cancelEditHandler);
     this.element.addEventListener('submit', this.onCancelClick); // повесил addEventListener напрямую, т.к. form это и есть this.element
     this.element.querySelector('.event__type-group').addEventListener('change', this.#typePointHandler);
     this.element.querySelector('.event__input--destination').addEventListener('change', this.#destinationPointHandler);
+    this.#setDatepickerFrom();
+    this.#setDatepickerTo();
   }
 
   #typePointHandler = (evt) => {
@@ -155,4 +177,42 @@ export default class EditPointView extends AbstractStatefulView {
     this.updateElement(this.point);
     this.#onCancelClick();
   };
+
+  #dateFromChangeHandler = ([userDate]) => {
+    this.updateElement({
+      dateFrom: userDate,
+    });
+  };
+
+  #dateToChangeHandler = ([userDate]) => {
+    this.updateElement({
+      dateTo: userDate,
+    });
+  };
+
+  #setDatepickerFrom() {
+    this.#datepickerFrom = flatpickr(
+      this.element.querySelector('#event-start-time-1'),
+      {
+        dateFormat: 'd/m/Y H:i',
+        'time_24hr': true,
+        enableTime: true,
+        defaultDate: this._state.dateFrom,
+        onChange: this.#dateFromChangeHandler, // На событие flatpickr передаём наш колбэк
+      },
+    );
+  }
+
+  #setDatepickerTo() {
+    this.#datepickerTo = flatpickr(
+      this.element.querySelector('#event-end-time-1'),
+      {
+        dateFormat: 'd/m/Y H:i',
+        'time_24hr': true,
+        enableTime: true,
+        defaultDate: this._state.dateTo,
+        onChange: this.#dateToChangeHandler, // На событие flatpickr передаём наш колбэк
+      },
+    );
+  }
 }
