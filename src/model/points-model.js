@@ -34,6 +34,11 @@ export default class PointsModel {
     return this.destinations.find((item) => item.id === id);
   }
 
+  getDestinationByName(name) {
+    // внутри массива this.destinations находим один, в котором функция ищет указанный name
+    return this.destinations.find((item) => item.name === name);
+  }
+
   // найти offers по типу
   getOffersByType(type) {
     return this.offers.find((item) => item.type === type);
