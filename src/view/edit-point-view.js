@@ -1,4 +1,5 @@
-import AbstractView from '../framework/view/abstract-view.js';
+//import AbstractView from '../framework/view/abstract-view.js';
+import AbstractStatefulView from '../framework/view/abstract-stateful-view.js';
 import { formatDate } from '../utils.js';
 
 function createEditPointTemplate(point, destination, allDestinations, allTypes, offersByType) {
@@ -16,7 +17,11 @@ function createEditPointTemplate(point, destination, allDestinations, allTypes, 
           <fieldset class="event__type-group">
             <legend class="visually-hidden">Event type</legend>
 
-            ${allTypes.map((type) => `<div class="event__type-item"><input id="event-type-${type === point}-1" class="event__type-input visually-hidden" type="radio" name="event-type" value="${type}"><label class="event__type-label  event__type-label--${type}" for="event-type-${type}-1">${type}</label></div>`).join('')}
+            ${allTypes.map((type) => `
+            <div class="event__type-item">
+              <input id="event-${type}-1" class="event__type-input visually-hidden" type="radio" name="event-type" value="${type}" ${type === point.type ? 'checked' : ''}>
+              <label class="event__type-label event__type-label--${type}" for="event-${type}-1">${type}</label>
+            </div>`).join('')}
 
           </fieldset>
         </div>
@@ -89,10 +94,17 @@ function createEditPointTemplate(point, destination, allDestinations, allTypes, 
   </form > `;
 }
 
-export default class EditPointView extends AbstractView {
-  //
+export default class EditPointView extends AbstractStatefulView {
+  //создание методов
+  #getOffersByType = null;
+  #getDestinationByName = null;
+  #getDestinationById = null;
+  #onCancelClick = null;
+
   constructor(point, destination, allDestinations, allTypes, offersByType) {
     super(); // вызвать конструктор родителя
+    this._setState(point);
+    //console.log(this._state);
     this.point = point;
     this.destination = destination;
     this.allDestinations = allDestinations;
@@ -100,13 +112,47 @@ export default class EditPointView extends AbstractView {
     this.offersByType = offersByType;
   }
 
-  init({ onCancelClick }) {
-    this.element.querySelector('.event__rollup-btn').addEventListener('click', onCancelClick);
-    this.element.addEventListener('submit', onCancelClick); // повесил addEventListener напрямую, т.к. form это и есть this.element
+  init({ onCancelClick, getOffersByType, getDestinationByName, getDestinationById }) {
+    this.#getOffersByType = getOffersByType;
+    this.#getDestinationByName = getDestinationByName;
+    this.#getDestinationById = getDestinationById;
+    this.#onCancelClick = onCancelClick;
+    this._restoreHandlers();
   }
 
   get template() {
-    return createEditPointTemplate(this.point, this.destination, this.allDestinations, this.allTypes, this.offersByType);
+    return createEditPointTemplate(this._state, this.destination, this.allDestinations, this.allTypes, this.offersByType);
   }
 
+  _restoreHandlers() {
+    this.element.querySelector('.event__rollup-btn').addEventListener('click', this.#cancelEditHandler);
+    this.element.addEventListener('submit', this.onCancelClick); // повесил addEventListener напрямую, т.к. form это и есть this.element
+    this.element.querySelector('.event__type-group').addEventListener('change', this.#typePointHandler);
+    this.element.querySelector('.event__input--destination').addEventListener('change', this.#destinationPointHandler);
+  }
+
+  #typePointHandler = (evt) => {
+    this.offersByType = this.#getOffersByType(evt.target.value);
+    this.updateElement({
+      type: evt.target.value,
+      offers: []
+    });
+  };
+
+  #destinationPointHandler = (evt) => {
+    this.destination = this.#getDestinationByName(evt.target.value);
+    if (this.destination) {
+      this.updateElement({
+        destination: this.destination.id
+      });
+    }
+  };
+
+  #cancelEditHandler = () => {
+    this.offersByType = this.#getOffersByType(this.point.type);
+    this.destination = this.#getDestinationById(this.point.destination);
+
+    this.updateElement(this.point);
+    this.#onCancelClick();
+  };
 }

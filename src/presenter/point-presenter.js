@@ -44,6 +44,9 @@ export default class PointPresenter {
     const allDestinations = this.#pointsModel.getDestination().map((item) => item.name);
     const allTypes = this.#pointsModel.getOffers().map((item) => item.type);
     const offersByType = this.#pointsModel.getOffersByType(this.#point.type).offers;
+    const getOffersByType = (type) => this.#pointsModel.getOffersByType(type).offers;
+    const getDestinationByName = (name) => this.#pointsModel.getDestinationByName(name);
+    const getDestinationById = (id) => this.#pointsModel.getDestinationById(id);
 
     this.#pointComponent = new PointView(this.#point, destination, offers);
     this.#pointComponent.init({
@@ -60,7 +63,10 @@ export default class PointPresenter {
       onCancelClick: () => {
         this.#replaceFormToPoint();
         document.removeEventListener('keydown', this.#escKeyDownHandler);
-      }
+      },
+      getOffersByType,
+      getDestinationByName,
+      getDestinationById
     });
     render(this.#pointComponent, this.#listPoint.element);
 
