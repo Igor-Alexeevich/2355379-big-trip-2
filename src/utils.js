@@ -62,7 +62,9 @@ function isPastPoints(points) {
 }
 
 function updateItem(items, update) {
-  return items.map((item) => item.id === update.id ? update : item);
+  const point = { ...update, dateFrom: formatDate(update.dateFrom, 'YYYY-MM-DDTHH:mm:ss'), dateTo: formatDate(update.dateTo, 'YYYY-MM-DDTHH:mm:ss') };
+  console.log(point);
+  return items.map((item) => item.id === update.id ? point : item);
 }
 
 function sortPointsByPrice(pointA, pointB) {

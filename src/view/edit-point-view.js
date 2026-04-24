@@ -69,7 +69,7 @@ function createEditPointTemplate(point, destination, allDestinations, allTypes, 
         <div class="event__available-offers">
 
         ${offersByType.map((item) => `<div class="event__offer-selector">
-            <input class="event__offer-checkbox  visually-hidden" id="${item.id}" type="checkbox" name="event-offer-${item.id}" ${point.offers.includes(item.id) ? 'checked' : ''}>
+            <input class="event__offer-checkbox  visually-hidden" value="${item.id}" id="${item.id}" type="checkbox" name="event-offer" ${point.offers.includes(item.id) ? 'checked' : ''}>
             <label class="event__offer-label" for="${item.id}">
               <span class="event__offer-title">${item.title}</span>
               &plus;&euro;&nbsp;
@@ -104,6 +104,7 @@ export default class EditPointView extends AbstractStatefulView {
   #onCancelClick = null;
   #datepickerFrom = null;
   #datepickerTo = null;
+  #onSubmit = null;
 
   constructor(point, destination, allDestinations, allTypes, offersByType) {
     super(); // вызвать конструктор родителя
@@ -116,13 +117,12 @@ export default class EditPointView extends AbstractStatefulView {
     this.offersByType = offersByType;
   }
 
-  init({ onCancelClick, getOffersByType, getDestinationByName, getDestinationById }) {
+  init({ onCancelClick, onSubmit, getOffersByType, getDestinationByName, getDestinationById }) {
     this.#getOffersByType = getOffersByType;
     this.#getDestinationByName = getDestinationByName;
     this.#getDestinationById = getDestinationById;
     this.#onCancelClick = onCancelClick;
-
-
+    this.#onSubmit = onSubmit;
     this._restoreHandlers();
   }
 
@@ -146,12 +146,31 @@ export default class EditPointView extends AbstractStatefulView {
 
   _restoreHandlers() {
     this.element.querySelector('.event__rollup-btn').addEventListener('click', this.#cancelEditHandler);
-    this.element.addEventListener('submit', this.onCancelClick); // повесил addEventListener напрямую, т.к. form это и есть this.element
+    //this.element.addEventListener('submit', this.onCancelClick); // повесил addEventListener напрямую, т.к. form это и есть this.element
+    this.element.addEventListener('submit', this.#formSubmitHandler);
     this.element.querySelector('.event__type-group').addEventListener('change', this.#typePointHandler);
     this.element.querySelector('.event__input--destination').addEventListener('change', this.#destinationPointHandler);
+    this.element.querySelector('.event__input--price').addEventListener('input', this.#priceHandler);
+    this.element.querySelectorAll('.event__offer-checkbox').forEach((elem) => {
+      elem.addEventListener('change', this.#offersHandler);
+    });
     this.#setDatepickerFrom();
     this.#setDatepickerTo();
   }
+
+  #offersHandler = () => {
+    const form = new FormData(this.element);
+    this._setState({
+      offers: form.getAll('event-offer')
+    });
+    console.log(form.getAll('event-offer'));
+  };
+
+  #priceHandler = (evt) => {
+    this._setState({
+      basePrice: Number(evt.target.value)
+    });
+  };
 
   #typePointHandler = (evt) => {
     this.offersByType = this.#getOffersByType(evt.target.value);
@@ -168,6 +187,11 @@ export default class EditPointView extends AbstractStatefulView {
         destination: this.destination.id
       });
     }
+  };
+
+  #formSubmitHandler = (evt) => {
+    evt.preventDefault();
+    this.#onSubmit(this._state);
   };
 
   #cancelEditHandler = () => {
@@ -198,6 +222,7 @@ export default class EditPointView extends AbstractStatefulView {
         'time_24hr': true,
         enableTime: true,
         defaultDate: this._state.dateFrom,
+        maxDate: this._state.dateTo,
         onChange: this.#dateFromChangeHandler, // На событие flatpickr передаём наш колбэк
       },
     );
@@ -211,6 +236,7 @@ export default class EditPointView extends AbstractStatefulView {
         'time_24hr': true,
         enableTime: true,
         defaultDate: this._state.dateTo,
+        minDate: this._state.dateTo,
         onChange: this.#dateToChangeHandler, // На событие flatpickr передаём наш колбэк
       },
     );
