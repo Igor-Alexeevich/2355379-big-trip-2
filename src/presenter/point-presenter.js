@@ -64,6 +64,7 @@ export default class PointPresenter {
         this.#replaceFormToPoint();
         document.removeEventListener('keydown', this.#escKeyDownHandler);
       },
+      onSubmit: (updatePoint) => this.#handleSubmit(updatePoint),
       getOffersByType,
       getDestinationByName,
       getDestinationById
@@ -104,8 +105,10 @@ export default class PointPresenter {
     this.#handleDataChange({ ...this.#point, isFavorite: !this.#point.isFavorite });
   }
 
-  #handleSubmit() {
-    this.#handleDataChange({ ...this.#point, isFavorite: !this.#point.isFavorite });
+  #handleSubmit(point) {
+    this.#handleDataChange(point);
+    this.#replaceFormToPoint();
+    document.removeEventListener('keydown', this.#escKeyDownHandler);
   }
 
   #replacePointToForm() {
