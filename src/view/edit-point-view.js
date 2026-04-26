@@ -163,7 +163,6 @@ export default class EditPointView extends AbstractStatefulView {
     this._setState({
       offers: form.getAll('event-offer')
     });
-    console.log(form.getAll('event-offer'));
   };
 
   #priceHandler = (evt) => {

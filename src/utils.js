@@ -63,7 +63,6 @@ function isPastPoints(points) {
 
 function updateItem(items, update) {
   const point = { ...update, dateFrom: formatDate(update.dateFrom, 'YYYY-MM-DDTHH:mm:ss'), dateTo: formatDate(update.dateTo, 'YYYY-MM-DDTHH:mm:ss') };
-  console.log(point);
   return items.map((item) => item.id === update.id ? point : item);
 }
 
